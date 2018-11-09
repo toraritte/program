@@ -1,0 +1,12 @@
+#!/usr/bin/env escript
+
+main([]) ->
+    case io:get_line("") of
+        eof ->
+            io:format("~n",[]);
+        Line ->
+            io:format("~p ", [Line]),
+            main([])
+    end;
+main(Args) ->
+    io:format("~p~n", Args).
