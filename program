@@ -8,5 +8,13 @@ main([]) ->
             io:format("~p ", [Line]),
             main([])
     end;
-main(Args) ->
-    io:format("~p~n", Args).
+main(_) ->
+    usage().
+
+usage() ->
+    io:format("Usage: program [PATTERN] ...\n"),
+    io:format("\n"),
+    io:format("       where PATTERN consists of text literals and\n"),
+    io:format("       zero or more token capture sequences.\n"),
+    halt(1).
+
