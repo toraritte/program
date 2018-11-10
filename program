@@ -1,11 +1,11 @@
 #!/usr/bin/env escript
 
-main([]) ->
+main([Pattern]) ->
     case io:get_line("") of
         eof ->
             io:format("~n",[]);
         Line ->
-            io:format("~p ", [Line]),
+            io:format("~p | ~p~n", [Line, Pattern]),
             main([])
     end;
 main(_) ->
@@ -18,3 +18,78 @@ usage() ->
     io:format("       zero or more token capture sequences.\n"),
     halt(1).
 
+pattern_to_regex(Pattern) ->
+    Tokens = string:lexemes(Pattern, " \n"),
+    Regexes = lists:map(fun token_to_regex/1, Tokens),
+
+token_to_regex([$%, ${|Rest] = PossibleTCS) ->
+    parse_tcs(PossibleTCS);
+token_to_regex({non_or_malformed_tcs, Literal}) ->
+    token_to_regex(Literal);
+token_to_regex(Literal) ->
+    Literal.
+
+% Cannot simply  pattern-match because the input  is a
+% string and, according to  the syntax spec, the first
+% part has to be a non-negative integer.
+tcs_to_regex([$%, ${|Rest] = PossibleTCS) ->
+    case lists:reverse(Rest) of
+        % Or use `lists:last/1`.
+        [$}|T] ->
+            TCSInternals = lists:reverse(T),
+            parse_tcs_internals(TCSInternals, PossibleTCS);
+        _ ->
+            Warning =
+                "Warning: Token capture sequence \"~p\" possibly missing\n" ++
+                "         closing \"}\". Treating token as text literal.\n",
+            io:format(standard_error, Warning, [PossibleTCS]),
+
+            token_to_regex({non_or_malformed_tcs, PossibleTCS})
+    end.
+
+parse_tcs_internals([Char|Tail] = Inner, Original) ->
+
+    BaseTCSRegex = "\\b(.*)\\b",
+
+    case string:to_integer(Char) of
+        {error, _} ->
+            % TODO: Emit warning.
+            token_to_regex({non_or_malformed_tcs, Original});
+        % Ignoring the TCS integer for now (the spec also
+        % didn't specify further constraints), but making
+        % sure that the TCS syntax is correct.
+        {_, []} ->
+            BaseTCSRegex;
+        {_, [$G]} ->
+            BaseTCSRegex;
+        {_, [$S|_]} ->
+            parse_s_modifier(Inner, Original);
+        _ ->
+            % TODO: Emit warning.
+            token_to_regex({non_or_malformed_tcs, Original})
+    end.
+
+parse_s_modifier([_, $S | []], Original) ->
+    % TODO: Emit warning.
+    token_to_regex({non_or_malformed_tcs, Original});
+parse_s_modifier([_, $S | Limiter], Original) ->
+
+    case string:to_integer(Limiter) of
+        {error, _} ->
+            % TODO: Emit warning.
+            token_to_regex({non_or_malformed_tcs, Original});
+        {Int, []} ->
+            make_s_regex(Int);
+        % If there is anything else than an int,
+        % it means that the TCS is malformed.
+        _ ->
+            % TODO: Emit warning.
+            token_to_regex({non_or_malformed_tcs, Original})
+    end.
+
+% 1> L = string:split("foo %{0} is a %{1}", " ", all).
+% ["foo","%{0}","is","a","%{1}"]
+% 2> R = lists:map(fun([$%|_] = S) -> "\\b(.*)\\b"; (Literal) -> Literal end, L).
+% ["foo","\\b(.*)\\b","is","a","\\b(.*)\\b"]
+% 3> os:cmd("echo 'foo blah is a bar' | ./priv/bin/pcre2grep '^" ++ string:join(R, " ") ++ "$'").
+% "foo blah is a bar\n"
