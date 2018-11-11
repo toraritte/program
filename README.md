@@ -1,0 +1,1 @@
+Note: `program` requires `pcre2grep` in the `./priv/bin` directory in order to run. An install script (`./install-pcre2grep.sh`) is provided that will create `./priv/bin`, and download & compile `pcre2grep` into it.

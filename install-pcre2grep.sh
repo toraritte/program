@@ -9,3 +9,5 @@ rm $TMPFILE
 mkdir priv
 cd pcre2-10.32
 ./configure --prefix=$(echo -n `cd ../priv; pwd`) && make && make install
+cd ..
+rm -r pcre2-10.32
