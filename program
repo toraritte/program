@@ -1,12 +1,19 @@
 #!/usr/bin/env escript
 
+% http://erlang.org/pipermail/erlang-questions/2017-August/093012.html
+-mode(compile).
+
 main([Pattern]) ->
     case io:get_line("") of
         eof ->
             io:format("~n",[]);
         Line ->
-            io:format("~p | ~p~n", [Line, Pattern]),
-            main([])
+            Regex = pattern_to_regex(Pattern),
+            C = "echo '" ++ Line ++ "' | ./priv/bin/pcre2grep '" ++ Regex ++ "'",
+            O = os:cmd(C),
+            io:format("COMMAND: ~p~nOUTPUT: ~p~n", [C, O])
+            % io:format("~p | ~p~n", [Line, Pattern]),
+            % main([])
     end;
 main(_) ->
     usage().
@@ -21,9 +28,10 @@ usage() ->
 pattern_to_regex(Pattern) ->
     Tokens = string:lexemes(Pattern, " \n"),
     Regexes = lists:map(fun token_to_regex/1, Tokens),
+    "^" ++ string:join(Regexes, " ") ++ "$".
 
 token_to_regex([$%, ${|Rest] = PossibleTCS) ->
-    parse_tcs(PossibleTCS);
+    tcs_to_regex(PossibleTCS);
 token_to_regex({non_or_malformed_tcs, Literal}) ->
     token_to_regex(Literal);
 token_to_regex(Literal) ->
@@ -32,7 +40,7 @@ token_to_regex(Literal) ->
 % Cannot simply  pattern-match because the input  is a
 % string and, according to  the syntax spec, the first
 % part has to be a non-negative integer.
-tcs_to_regex([$%, ${|Rest] = PossibleTCS) ->
+tcs_to_regex([$%, ${ | Rest] = PossibleTCS) ->
     case lists:reverse(Rest) of
         % Or use `lists:last/1`.
         [$}|T] ->
@@ -86,6 +94,14 @@ parse_s_modifier([_, $S | Limiter], Original) ->
             % TODO: Emit warning.
             token_to_regex({non_or_malformed_tcs, Original})
     end.
+
+make_s_regex(Int) ->
+    "\\b(" ++ do_make_s_regex(Int) ++ ")\\b".
+
+do_make_s_regex(0) ->
+    "\\S+";
+do_make_s_regex(Int) ->
+    do_make_s_regex(Int-1) ++ "\\s{1}\\S+".
 
 % 1> L = string:split("foo %{0} is a %{1}", " ", all).
 % ["foo","%{0}","is","a","%{1}"]
