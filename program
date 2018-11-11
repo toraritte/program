@@ -9,11 +9,10 @@ main([Pattern]) ->
             io:format("~n",[]);
         Line ->
             Regex = pattern_to_regex(Pattern),
-            C = "echo '" ++ Line ++ "' | ./priv/bin/pcre2grep '" ++ Regex ++ "'",
-            O = os:cmd(C),
-            io:format("COMMAND: ~p~nOUTPUT: ~p~n", [C, O])
-            % io:format("~p | ~p~n", [Line, Pattern]),
-            % main([])
+            Command = "echo '" ++ Line ++ "' | ./priv/bin/pcre2grep '" ++ Regex ++ "'",
+            Output = os:cmd(Command),
+            io:format("~p~n", [Output]),
+            main([Pattern])
     end;
 main(_) ->
     usage().
@@ -27,13 +26,13 @@ usage() ->
 
 pattern_to_regex(Pattern) ->
     Tokens = string:lexemes(Pattern, " \n"),
-    io:format("~p~n", [Tokens]),
+    % io:format("~p~n", [Tokens]),
     Regexes = lists:map(fun token_to_regex/1, Tokens),
-    io:format("~p~n", [Regexes]),
+    % io:format("~p~n", [Regexes]),
     "^" ++ string:join(Regexes, " ") ++ "$".
 
 token_to_regex([$%, ${|_] = PossibleTCS) ->
-    io:format("~p~n", [PossibleTCS]),
+    % io:format("~p~n", [PossibleTCS]),
     tcs_to_regex(PossibleTCS);
 token_to_regex({non_or_malformed_tcs, Literal}) ->
     Literal;
@@ -48,7 +47,7 @@ tcs_to_regex([$%, ${ | Rest] = PossibleTCS) ->
         % Or use `lists:last/1`.
         [$}|T] ->
             TCSInternals = lists:reverse(T),
-    io:format("TCSInternals: ~p~n", [TCSInternals]),
+    % io:format("TCSInternals: ~p~n", [TCSInternals]),
             parse_tcs_internals(TCSInternals, PossibleTCS);
         _ ->
             Warning =
@@ -71,7 +70,7 @@ parse_tcs_internals(Inner, Original) ->
         % didn't specify further constraints), but making
         % sure that the TCS syntax is correct.
         {_, []} ->
-            io:format("itt~n", []),
+            % io:format("itt~n", []),
             BaseTCSRegex;
         {_, [$G]} ->
             BaseTCSRegex;
