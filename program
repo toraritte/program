@@ -4,16 +4,8 @@
 -mode(compile).
 
 main([Pattern]) ->
-    case io:get_line("") of
-        eof ->
-            io:format("~n",[]);
-        Line ->
-            Regex = pattern_to_regex(Pattern),
-            Command = "echo '" ++ Line ++ "' | ./priv/bin/pcre2grep '" ++ Regex ++ "'",
-            Output = os:cmd(Command),
-            io:format("~p~n", [Output]),
-            main([Pattern])
-    end;
+    Regex = pattern_to_regex(Pattern),
+    read_lines(Regex);
 main(_) ->
     usage().
 
@@ -23,6 +15,25 @@ usage() ->
     io:format("       where PATTERN consists of text literals and\n"),
     io:format("       zero or more token capture sequences.\n"),
     halt(1).
+
+read_lines(Regex) ->
+    case io:get_line("") of
+        eof ->
+            no_op;
+        Line ->
+            Matched = match_line(Line, Regex),
+            print_matching_lines(Matched),
+            read_lines(Regex)
+    end.
+
+match_line(Line, Regex) ->
+    Command = "echo '" ++ Line ++ "' | ./priv/bin/pcre2grep '" ++ Regex ++ "'",
+    os:cmd(Command).
+
+print_matching_lines([]) ->
+    no_op;
+print_matching_lines(Matched) ->
+    io:format("~p~n", [Matched]).
 
 pattern_to_regex(Pattern) ->
     Tokens = string:lexemes(Pattern, " \n"),
