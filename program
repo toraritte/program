@@ -27,13 +27,16 @@ usage() ->
 
 pattern_to_regex(Pattern) ->
     Tokens = string:lexemes(Pattern, " \n"),
+    io:format("~p~n", [Tokens]),
     Regexes = lists:map(fun token_to_regex/1, Tokens),
+    io:format("~p~n", [Regexes]),
     "^" ++ string:join(Regexes, " ") ++ "$".
 
-token_to_regex([$%, ${|Rest] = PossibleTCS) ->
+token_to_regex([$%, ${|_] = PossibleTCS) ->
+    io:format("~p~n", [PossibleTCS]),
     tcs_to_regex(PossibleTCS);
 token_to_regex({non_or_malformed_tcs, Literal}) ->
-    token_to_regex(Literal);
+    Literal;
 token_to_regex(Literal) ->
     Literal.
 
@@ -45,6 +48,7 @@ tcs_to_regex([$%, ${ | Rest] = PossibleTCS) ->
         % Or use `lists:last/1`.
         [$}|T] ->
             TCSInternals = lists:reverse(T),
+    io:format("TCSInternals: ~p~n", [TCSInternals]),
             parse_tcs_internals(TCSInternals, PossibleTCS);
         _ ->
             Warning =
@@ -55,11 +59,11 @@ tcs_to_regex([$%, ${ | Rest] = PossibleTCS) ->
             token_to_regex({non_or_malformed_tcs, PossibleTCS})
     end.
 
-parse_tcs_internals([Char|Tail] = Inner, Original) ->
+parse_tcs_internals(Inner, Original) ->
 
     BaseTCSRegex = "\\b(.*)\\b",
 
-    case string:to_integer(Char) of
+    case string:to_integer(Inner) of
         {error, _} ->
             % TODO: Emit warning.
             token_to_regex({non_or_malformed_tcs, Original});
@@ -67,6 +71,7 @@ parse_tcs_internals([Char|Tail] = Inner, Original) ->
         % didn't specify further constraints), but making
         % sure that the TCS syntax is correct.
         {_, []} ->
+            io:format("itt~n", []),
             BaseTCSRegex;
         {_, [$G]} ->
             BaseTCSRegex;
