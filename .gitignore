@@ -1,2 +1,4 @@
 program.txt
 priv/
+out.txt
+*.beam

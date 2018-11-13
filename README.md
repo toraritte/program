@@ -1,1 +1,6 @@
-Note: `program` requires `pcre2grep` in the `./priv/bin` directory in order to run. An install script (`./install-pcre2grep.sh`) is provided that will create `./priv/bin`, and download & compile `pcre2grep` into it.
+Note: `program` requires 
+1. `pcre2grep` in the `./priv/bin` directory and
+2. the `src/*.erl` files to be compiled in the same directory as `program` is in
+in order to run.
+
+Running `setup.sh` takes care of these steps.
