@@ -26,6 +26,9 @@ read_lines(Regex) ->
             read_lines(Regex)
     end.
 
+% TODO: Fix  malformed TCS  matches. For  example, the
+%       pattern below won't match:
+% echo "foo blah is a %{1" | ./program "foo %{0} is a %{1}"
 match_line(Line, Regex) ->
     Command = "echo '" ++ Line ++ "' | ./priv/bin/pcre2grep '" ++ Regex ++ "'",
     os:cmd(Command).
