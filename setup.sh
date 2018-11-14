@@ -12,4 +12,5 @@ cd pcre2-10.32
 cd ..
 rm -r pcre2-10.32
 
-erlc src/main_loop.erl src/pattern.erl
+mkdir ebin
+erlc -o ebin/ src/main_loop.erl src/pattern.erl

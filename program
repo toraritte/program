@@ -1,7 +1,7 @@
 #!/usr/bin/env escript
+%%! -pa ./ebin/ -Wall
 
 % https://stackoverflow.com/questions/20862186/how-do-i-use-external-libraries-in-an-erlang-escript
-%%! -pa ./ -Wall
 
 % http://erlang.org/pipermail/erlang-questions/2017-August/093012.html
 -mode(compile).
